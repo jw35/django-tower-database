@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from database.models import Tower, Contact, ContactMap, ContactMethod
-
+from database.models import Tower, Contact, ContactMap
 import requests
 import csv
 
@@ -22,17 +21,6 @@ easy_fields = (
     ('Postcode', 'postcode'),
     ('Lng', 'lat'),
     ('Lat', 'lng'),
-    ('Website', 'website'),
-    #('Picture', ''),
-    #('Picture credit', ''),
-    #('Secretary', ''),
-    #('Phone', ''),
-    #('Email', ''),
-    #('Band contact', ''),
-    #('Bells contact', ''),
-    #('', 'primary_contact'),
-    #('', 'contact_restrictions'),
-    #('Peals', 'peals'),
     ('Dove Tower ID', 'dove_towerid'),
     ('Dove Ring ID', 'dove_ringid'),
     ('TowerBase ID', 'towerbase_id'),
@@ -51,8 +39,9 @@ boolean_fields = (
 lookup_fields = (
     ('County', 'county', {'Cambridgeshire': 'C', 'Norfolk': 'N'}),
     ('District', 'district', {'Cambridge': 'C', 'Ely': 'E', 'Huntingdon': 'H', 'Wisbech': 'W'}),
+    ('Status', 'ringing', {'Regular ringing': 'R', 'Occasional ringing': 'O', 'No ringing': 'N'}),
     ('Day', 'day', {'Monday': 'Mon', 'Tuesday': 'Tue', 'Wednesday': 'Wed', 'Thursday': 'Thu', 'Friday': 'Fri', 'Saturday': 'Sat', 'Sunday': 'Sun'}),
-    ('Type', 'ring_type', {'Chime': 'Chime', 'Tubular Chime': 'T-Chime', 'Removed': '', 'Hung dead': ''}),
+    ('Type', 'ring_type', {'Chime': 'Chime', 'Tubular Chime': 'T-chime', 'Removed': '', 'Hung dead': ''}),
 )
 
 status_lookup = {
@@ -93,26 +82,29 @@ class Command(BaseCommand):
 
             for f, t, l in lookup_fields:
                 if csv_row[f]:
-                    self.stdout.write(f"{f}, {csv_row[f]}")
                     setattr(db_row, t, l[csv_row[f]])
 
             db_row.bells = int(csv_row['Bells'])
             if csv_row['Peals']:
                 db_row.peals = int(csv_row['Peals'])
 
-            if csv_row['Secretary']:
-                contact = Contact(name=csv_row['Secretary'], publish=True)
-                if csv_row['Band contact'] and not csv_row['Bells contact']:
-                    contact.contact_restrictions = 'Band only'
-                elif not csv_row['Band contact'] and csv_row['Bells contact']:
-                    contact.contact_restrictions = 'Bells only'
-                contact.save()
-                db_row.contact = contact
+            if csv_row['Secretary'] or csv_row['Phone'] or csv_row['Email']:
+                (contact, created) = Contact.objects.get_or_create(name=csv_row['Secretary'], phone=csv_row['Phone'], email=csv_row['Email'], publish=True)
+                self.stdout.write(str(contact))
+                db_row.primary_contact = contact
 
-                if csv_row['Phone']:
-                    contact.contactmethod_set.create(contact_type='Phone', contact_value=csv_row['Phone'])
-                if csv_row['Email']:
-                    contact.contactmethod_set.create(contact_type='Email', contact_value=csv_row['Email'])
+            contact_use = ''
+            if csv_row['Band contact'] and csv_row['Bells contact']:
+                db_row.contact_use = 'All'
+            elif csv_row['Band contact']:
+                db_row.contact_use = 'Band only'
+            elif csv_row['Bells contact']:
+                db_row.contact_use = 'Bells only'
+            else:
+                db_row.contact_use = 'None'
 
             db_row.save()
+
+            if csv_row['Website']:
+                db_row.website_set.create(website=csv_row['Website'])
 
