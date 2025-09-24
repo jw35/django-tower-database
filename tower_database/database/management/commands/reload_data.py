@@ -13,7 +13,7 @@ easy_fields = (
     ('Nickname', 'nickname'),
     ('Service', 'service'),
     ('Practice', 'practice'),
-    ('Week', 'week'),
+    ('Week', 'practice_weeks'),
     ('Bells', 'bells'),
     ('Weight', 'weight'),
     ('Note', 'note'),
@@ -32,23 +32,18 @@ easy_fields = (
 boolean_fields = (
     ('Include dedication', 'include_dedication'),
     ('Report', 'report'),
-    ('Check', 'check_before_traveling'),
+    ('Check', 'travel_check'),
     ('GF', 'gf'),
 )
 
 lookup_fields = (
     ('County', 'county', {'Cambridgeshire': 'C', 'Norfolk': 'N'}),
     ('District', 'district', {'Cambridge': 'C', 'Ely': 'E', 'Huntingdon': 'H', 'Wisbech': 'W'}),
-    ('Status', 'ringing', {'Regular ringing': 'R', 'Occasional ringing': 'O', 'No ringing': 'N'}),
-    ('Day', 'day', {'Monday': 'Mon', 'Tuesday': 'Tue', 'Wednesday': 'Wed', 'Thursday': 'Thu', 'Friday': 'Fri', 'Saturday': 'Sat', 'Sunday': 'Sun'}),
+    ('Status', 'ringing_status', {'Regular ringing': 'R', 'Occasional ringing': 'O', 'No ringing': 'N'}),
+    ('Day', 'practice_day', {'Monday': 'Mon', 'Tuesday': 'Tue', 'Wednesday': 'Wed', 'Thursday': 'Thu', 'Friday': 'Fri', 'Saturday': 'Sat', 'Sunday': 'Sun'}),
     ('Type', 'ring_type', {'Chime': 'Chime', 'Tubular Chime': 'T-chime', 'Removed': '', 'Hung dead': ''}),
 )
 
-status_lookup = {
-    'Regular ringing': 'R',
-    'Occasional ringing': 'O',
-    'No ringing': 'N'
-}
 
 class Command(BaseCommand):
     help = 'Reload the database from the master list'
@@ -89,8 +84,7 @@ class Command(BaseCommand):
                 db_row.peals = int(csv_row['Peals'])
 
             if csv_row['Secretary'] or csv_row['Phone'] or csv_row['Email']:
-                (contact, created) = Contact.objects.get_or_create(name=csv_row['Secretary'], phone=csv_row['Phone'], email=csv_row['Email'], publish=True)
-                self.stdout.write(str(contact))
+                (contact, created) = Contact.objects.get_or_create(name=csv_row['Secretary'], phone=csv_row['Phone'], email=csv_row['Email'])
                 db_row.primary_contact = contact
 
             contact_use = ''
