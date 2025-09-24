@@ -2,6 +2,8 @@ from django.contrib import admin
 
 from search_admin_autocomplete.admin import SearchAutoCompleteAdmin
 
+from simple_history.admin import SimpleHistoryAdmin
+
 # Register your models here.
 
 from .models import Contact, Tower, ContactMap, Website
@@ -38,12 +40,12 @@ class WebsiteInline(admin.TabularInline):
     extra = 0
     #classes = ["collapse"]
 
-class ContactAdmin(SearchAutoCompleteAdmin):
+class ContactAdmin(SearchAutoCompleteAdmin, SimpleHistoryAdmin):
     inlines= [PrimaryContactInline, TowerInline]
     search_fields = ["name", "phone", "email"]
     search_help_text = "Search by name, phone number or email"
 
-class TowerAdmin(SearchAutoCompleteAdmin):
+class TowerAdmin(SearchAutoCompleteAdmin, SimpleHistoryAdmin):
     inlines = [WebsiteInline, ContactInline]
     list_display = ["place", "dedication", "district", "bells"]
     list_filter = ["district", "report", "bells", "ringing_status", "ring_type", "practice_day"]

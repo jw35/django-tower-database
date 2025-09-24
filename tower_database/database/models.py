@@ -2,6 +2,9 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 
+from multiselectfield import MultiSelectField
+from simple_history.models import HistoricalRecords
+
 import re
 
 # Create your models here.
@@ -11,6 +14,7 @@ class Contact(models.Model):
     phone = models.CharField(max_length=100, blank=True, help_text="Contact phone number")
     phone2 = models.CharField(max_length=100, blank=True, verbose_name="Phone", help_text="Alternate phone number")
     email = models.EmailField(max_length=100, blank=True, help_text="Contact email address")
+    history = HistoricalRecords()
 
     def __str__(self):
         return ' / '.join([f for f in (self.name, self.phone, self.phone2, self.email) if f != ''])
@@ -75,6 +79,14 @@ class Tower(models.Model):
         SATURDAY = 'Sat'
         SUNDAY = 'Sun'
 
+    class PracticeWeeks(models.TextChoices):
+        W1 = '1st', '1st'
+        W2 = '2nd', '2nd'
+        W3 = '3rd', '3rd'
+        W4 = '4th', '4th'
+        W5 = '5th', '5th'
+        ALT = 'Alt', 'Alt'
+
     class RingTypes(models.TextChoices):
         FULL = 'Full', 'Full-circle ring'
         LIGHT = 'Light', 'Lightweight ring'
@@ -102,6 +114,14 @@ class Tower(models.Model):
         if TowerConstants.BAD_TIME_PATTERN.search(value):
             raise ValidationError("Time value missing leading '0'")
 
+    def week_validator(value):
+        if ((Tower.PracticeWeeks.W1 in value or
+             Tower.PracticeWeeks.W2 in value or
+             Tower.PracticeWeeks.W3 in value or
+             Tower.PracticeWeeks.W4 in value or
+             Tower.PracticeWeeks.W5 in value
+           ) and Tower.PracticeWeeks.ALT in value):
+            raise ValidationError(f"Can't include both 'Alt' and idividual week numbers")
 
     def weight_validator(value):
         if not TowerConstants.WEIGHT_PATTERN.fullmatch(value):
@@ -131,7 +151,7 @@ class Tower(models.Model):
     service = models.CharField(max_length=200, blank=True, validators=[time_validator], help_text="Short description of normal service ringing. No initial capital (unless day of week)")
     practice = models.CharField(max_length=200, blank=True, validators=[time_validator], help_text="Short description of normal practice ringing. No initial capital (unless day of week)")
     practice_day = models.CharField(max_length=9, blank=True, choices=Days, help_text="Day of the week of main practice")
-    practice_weeks = models.CharField(max_length=50, blank=True, help_text="Week(s) of the month for main practice if not all [‘2nd, 5th’, 'alt']")
+    practice_weeks = MultiSelectField(max_length=50, blank=True, choices=PracticeWeeks, validators=[week_validator], help_text="Week(s) of the month for main practice if not all [‘2nd, 5th’, 'alt']")
     travel_check = models.BooleanField(default=False, help_text="Check before travelling to practices?")
     bells = models.PositiveIntegerField(null=True, blank=True, help_text="Number of ringable bells",validators=[bell_validator])
     ring_type = models.CharField(max_length=20, blank=True, choices=RingTypes)
@@ -152,6 +172,7 @@ class Tower(models.Model):
     notes = models.CharField(max_length=100, blank=True, help_text="For display, especially in the Annual Report")
     long_notes = models.TextField(blank=True, help_text="For display when space isn’t at a premium")
     maintainer_notes = models.TextField(blank=True)
+    history = HistoricalRecords()
 
     def __str__(self):
         return f'{self.place}  {self.dedication}'
@@ -180,14 +201,11 @@ class Tower(models.Model):
         if not TowerConstants.CHECK_PATTERN.search(self.practice):
             for phrase in TowerConstants.WEEK_PHRASE_PATTERN.findall(self.practice):
                 if phrase not in self.practice_weeks:
-                    errors.append(f"'{phrase}' appears in in Practice '{self.practice}' but not in Practice Weeks '{self.practice_weeks}'")
+                    errors.append(f"'{phrase}' appears in in Practice '{self.practice}' but not in Practice Weeks")
 
 
-        for phrase in self.practice_weeks.split(', '):
-            if 'BH' in phrase:
-                if 'Bank' not in self.practice:
-                    errors.append(f"'BH' in Practice Weeks '{self.practice_weeks}'  but 'Bank' not in Practice '{self.practice}'")
-            elif phrase not in self.practice:
+        for phrase in self.practice_weeks:
+            if phrase not in self.practice:
                 errors.append(f"'{phrase}' in Practice Weeks but not in Practice '{self.practice}'")
 
         # Check
@@ -210,6 +228,7 @@ class Website(models.Model):
 
     tower = models.ForeignKey(Tower, on_delete=models.CASCADE)
     website = models.URLField()
+    history = HistoricalRecords()
 
     def __str__(self):
         return f'{self.website}  ({self.tower})'
@@ -230,6 +249,7 @@ class ContactMap(models.Model):
     tower = models.ForeignKey(Tower, on_delete=models.CASCADE)
     contact = models.ForeignKey(Contact, on_delete=models.CASCADE)
     publish = models.BooleanField(default=True)
+    history = HistoricalRecords()
 
     def __str__(self):
         return f'{self.get_role_display()} - {self.tower} - {self.contact}'
