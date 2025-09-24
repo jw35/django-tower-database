@@ -51,7 +51,7 @@ class TowerConstants():
     CHECK_PATTERN = re.compile(r'check(?! if Bank Holiday)|by arrangement|by invitation', re.IGNORECASE)
 
     # Valid phrases for week patterns
-    WEEK_PHRASE_PATTERN = re.compile(r'1st|2nd|3rd|4th|5th|not')
+    WEEK_PHRASE_PATTERN = re.compile(r'1st|2nd|3rd|4th|5th')
 
 class Tower(models.Model):
 
@@ -85,7 +85,7 @@ class Tower(models.Model):
         W3 = '3rd', '3rd'
         W4 = '4th', '4th'
         W5 = '5th', '5th'
-        ALT = 'Alt', 'Alt'
+        ALT = 'Alt', 'Alternate'
 
     class RingTypes(models.TextChoices):
         FULL = 'Full', 'Full-circle ring'
@@ -114,6 +114,11 @@ class Tower(models.Model):
         if TowerConstants.BAD_TIME_PATTERN.search(value):
             raise ValidationError("Time value missing leading '0'")
 
+    def initial_capital_validator(value):
+        if (value[0].isupper() and not 
+            value.startswith(('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'))):
+            raise ValidationError("No initial capital, except for days of week")
+
     def week_validator(value):
         if ((Tower.PracticeWeeks.W1 in value or
              Tower.PracticeWeeks.W2 in value or
@@ -121,7 +126,7 @@ class Tower(models.Model):
              Tower.PracticeWeeks.W4 in value or
              Tower.PracticeWeeks.W5 in value
            ) and Tower.PracticeWeeks.ALT in value):
-            raise ValidationError(f"Can't include both 'Alt' and idividual week numbers")
+            raise ValidationError(f"Can't include both 'Alternate' and individual week numbers")
 
     def weight_validator(value):
         if not TowerConstants.WEIGHT_PATTERN.fullmatch(value):
@@ -148,8 +153,8 @@ class Tower(models.Model):
     include_dedication = models.BooleanField(default=False, help_text="For places with more than one tower [Cambridge], or for towers in different places that have the same name [Chesterton])")
     ringing_status = models.CharField(max_length=20, blank=True, choices=RingingStatus, help_text="Full-circle ringing status")
     report = models.BooleanField(default=False, verbose_name="In annual report?")
-    service = models.CharField(max_length=200, blank=True, validators=[time_validator], help_text="Short description of normal service ringing. No initial capital (unless day of week)")
-    practice = models.CharField(max_length=200, blank=True, validators=[time_validator], help_text="Short description of normal practice ringing. No initial capital (unless day of week)")
+    service = models.CharField(max_length=200, blank=True, validators=[time_validator, initial_capital_validator], help_text="Short description of normal service ringing. No initial capital (unless day of week)")
+    practice = models.CharField(max_length=200, blank=True, validators=[time_validator, initial_capital_validator], help_text="Short description of normal practice ringing. No initial capital (unless day of week)")
     practice_day = models.CharField(max_length=9, blank=True, choices=Days, help_text="Day of the week of main practice")
     practice_weeks = MultiSelectField(max_length=50, blank=True, choices=PracticeWeeks, validators=[week_validator], help_text="Week(s) of the month for main practice if not all [‘2nd, 5th’, 'alt']")
     travel_check = models.BooleanField(default=False, help_text="Check before travelling to practices?")

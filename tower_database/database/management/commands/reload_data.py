@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from database.models import Tower, Contact, ContactMap
 import requests
 import csv
+import re
 
 from io import StringIO
 
@@ -13,7 +14,6 @@ easy_fields = (
     ('Nickname', 'nickname'),
     ('Service', 'service'),
     ('Practice', 'practice'),
-    ('Week', 'practice_weeks'),
     ('Bells', 'bells'),
     ('Weight', 'weight'),
     ('Note', 'note'),
@@ -78,6 +78,11 @@ class Command(BaseCommand):
             for f, t, l in lookup_fields:
                 if csv_row[f]:
                     setattr(db_row, t, l[csv_row[f]])
+
+            self.stdout.write(csv_row['Week'])
+            weeks = re.split(r', +', csv_row['Week'])
+            self.stdout.write(repr(weeks))
+            db_row.practice_weeks = weeks
 
             db_row.bells = int(csv_row['Bells'])
             if csv_row['Peals']:
