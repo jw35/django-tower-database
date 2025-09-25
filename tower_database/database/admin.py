@@ -8,7 +8,7 @@ from simple_history.admin import SimpleHistoryAdmin
 
 # Register your models here.
 
-from .models import Contact, Tower, ContactMap, Website
+from .models import Contact, Tower, ContactMap, Website, DoveTower
 
 admin.site.site_header = "Ely DA Tower Database"
 admin.site.site_title = "Database admin"
@@ -132,7 +132,19 @@ class TowerAdmin(SearchAutoCompleteAdmin, SimpleHistoryAdmin):
         )
     ]
 
+class DoveTowerAdmin(SearchAutoCompleteAdmin):
+    search_fields = ["place", "dedicn"]
+    search_help_text = "Search by place or dedication"
+
+    def get_readonly_fields(self, request, obj=None):
+        return [f.name for f in obj._meta.fields]
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return False
 
 admin.site.register(Contact, ContactAdmin)
 admin.site.register(Tower, TowerAdmin)
-
+admin.site.register(DoveTower, DoveTowerAdmin)

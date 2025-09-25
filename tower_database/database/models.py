@@ -296,3 +296,63 @@ class ContactMap(models.Model):
         #unique_together = ['tower', 'contact']
         ordering = ["tower", "role"]
 
+# Auto-generated with ./manage.py inspectdb
+
+class DoveTower(models.Model):
+    towerid = models.CharField(db_column='TowerID', blank=True, null=True)  # Field name made lowercase.
+    ringid = models.CharField(db_column='RingID', primary_key=True)  # Field name made lowercase.
+    ringtype = models.CharField(db_column='RingType', blank=True, null=True)  # Field name made lowercase.
+    place = models.CharField(db_column='Place', blank=True, null=True)  # Field name made lowercase.
+    place2 = models.CharField(db_column='Place2', blank=True, null=True)  # Field name made lowercase.
+    placecl = models.CharField(db_column='PlaceCL', blank=True, null=True)  # Field name made lowercase.
+    dedicn = models.CharField(db_column='Dedicn', blank=True, null=True)  # Field name made lowercase.
+    towerstatus = models.CharField(db_column='TowerStatus', blank=True, null=True)  # Field name made lowercase.
+    statusfirst = models.CharField(db_column='StatusFirst', blank=True, null=True)  # Field name made lowercase.
+    barededicn = models.CharField(db_column='BareDedicn', blank=True, null=True)  # Field name made lowercase.
+    altname = models.CharField(db_column='AltName', blank=True, null=True)  # Field name made lowercase.
+    ringname = models.CharField(db_column='RingName', blank=True, null=True)  # Field name made lowercase.
+    region = models.CharField(db_column='Region', blank=True, null=True)  # Field name made lowercase.
+    county = models.CharField(db_column='County', blank=True, null=True)  # Field name made lowercase.
+    country = models.CharField(db_column='Country', blank=True, null=True)  # Field name made lowercase.
+    histregion = models.CharField(db_column='HistRegion', blank=True, null=True)  # Field name made lowercase.
+    iso3166code = models.CharField(db_column='ISO3166code', blank=True, null=True)  # Field name made lowercase.
+    diocese = models.CharField(db_column='Diocese', blank=True, null=True)  # Field name made lowercase.
+    lat = models.CharField(db_column='Lat', blank=True, null=True)  # Field name made lowercase.
+    long = models.CharField(db_column='Long', blank=True, null=True)  # Field name made lowercase.
+    bells = models.CharField(db_column='Bells', blank=True, null=True)  # Field name made lowercase.
+    ur = models.CharField(db_column='UR', blank=True, null=True)  # Field name made lowercase.
+    semitones = models.CharField(db_column='Semitones', blank=True, null=True)  # Field name made lowercase.
+    wt = models.CharField(db_column='Wt', blank=True, null=True)  # Field name made lowercase.
+    app = models.CharField(db_column='App', blank=True, null=True)  # Field name made lowercase.
+    note = models.CharField(db_column='Note', blank=True, null=True)  # Field name made lowercase.
+    hz = models.CharField(db_column='Hz', blank=True, null=True)  # Field name made lowercase.
+    details = models.CharField(db_column='Details', blank=True, null=True)  # Field name made lowercase.
+    gf = models.CharField(db_column='GF', blank=True, null=True)  # Field name made lowercase.
+    toilet = models.CharField(db_column='Toilet', blank=True, null=True)  # Field name made lowercase.
+    simulator = models.CharField(db_column='Simulator', blank=True, null=True)  # Field name made lowercase.
+    extrainfo = models.CharField(db_column='ExtraInfo', blank=True, null=True)  # Field name made lowercase.
+    webpage = models.CharField(db_column='WebPage', blank=True, null=True)  # Field name made lowercase.
+    affiliations = models.CharField(db_column='Affiliations', blank=True, null=True)  # Field name made lowercase.
+    ng = models.CharField(db_column='NG', blank=True, null=True)  # Field name made lowercase.
+    postcode = models.CharField(db_column='Postcode', blank=True, null=True)  # Field name made lowercase.
+    practice = models.CharField(db_column='Practice', blank=True, null=True)  # Field name made lowercase.
+    ovhaulyr = models.CharField(db_column='OvhaulYr', blank=True, null=True)  # Field name made lowercase.
+    contractor = models.CharField(db_column='Contractor', blank=True, null=True)  # Field name made lowercase.
+    tuneyr = models.CharField(db_column='TuneYr', blank=True, null=True)  # Field name made lowercase.
+    lgrade = models.CharField(db_column='LGrade', blank=True, null=True)  # Field name made lowercase.
+    bldgid = models.CharField(db_column='BldgID', blank=True, null=True)  # Field name made lowercase.
+    churchcare = models.CharField(db_column='ChurchCare', blank=True, null=True)  # Field name made lowercase.
+    chrassetid = models.CharField(db_column='CHRAssetID', blank=True, null=True)  # Field name made lowercase.
+    towerbase = models.CharField(db_column='TowerBase', blank=True, null=True)  # Field name made lowercase.
+    doveid = models.CharField(db_column='DoveID', blank=True, null=True)  # Field name made lowercase.
+    snlat = models.CharField(db_column='SNLat', blank=True, null=True)  # Field name made lowercase.
+    snlong = models.CharField(db_column='SNLong', blank=True, null=True)  # Field name made lowercase.
+
+    def __str__(self):
+        return f'{self.place}  {self.dedicn}'
+
+
+    class Meta:
+        managed = False
+        db_table = 'dove_towers'
+        ordering = ["place", "dedicn"]
