@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils.html import urlize
+from django.utils.safestring import mark_safe
 
 from search_admin_autocomplete.admin import SearchAutoCompleteAdmin
 
@@ -51,6 +53,17 @@ class TowerAdmin(SearchAutoCompleteAdmin, SimpleHistoryAdmin):
     list_filter = ["district", "report", "bells", "ringing_status", "ring_type", "practice_day"]
     search_fields = ["place", "dedication", "full_dedication", "nickname"]
     search_help_text = "Search by place or dedication"
+    readonly_fields = ["dove_link_html", "bellboard_link_html", "felstead_link_html"]
+
+    def dove_link_html(self, instance):
+        return mark_safe(urlize(instance.dove_link, nofollow=True, autoescape=True))
+
+    def bellboard_link_html(self, instance):
+        return mark_safe(urlize(instance.bellboard_link, nofollow=True, autoescape=True))
+
+    def felstead_link_html(self, instance):
+        return mark_safe(urlize(instance.felstead_link, nofollow=True, autoescape=True))
+
     fieldsets = [
         (
             None, {
@@ -105,9 +118,12 @@ class TowerAdmin(SearchAutoCompleteAdmin, SimpleHistoryAdmin):
                 "fields": (
                     "primary_contact",
                     "contact_use",
-                    "dove_towerid",
                     "dove_ringid",
+                    "dove_towerid",
+                    "dove_link_html",
+                    "bellboard_link_html",
                     "towerbase_id",
+                    "felstead_link_html",
                     "notes",
                     "long_notes",
                     "maintainer_notes",
@@ -115,6 +131,7 @@ class TowerAdmin(SearchAutoCompleteAdmin, SimpleHistoryAdmin):
             }
         )
     ]
+
 
 admin.site.register(Contact, ContactAdmin)
 admin.site.register(Tower, TowerAdmin)

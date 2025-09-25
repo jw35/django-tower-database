@@ -7,6 +7,8 @@ from simple_history.models import HistoricalRecords
 
 import re
 
+from collections import defaultdict
+
 # Create your models here.
 
 class Contact(models.Model):
@@ -33,7 +35,7 @@ class Contact(models.Model):
 class TowerConstants():
 
     # Probable times without leading '0''
-    BAD_TIME_PATTERN = re.compile(r'(?<!\d)\d:\d\d(?!\d)')
+    BAD_TIME_PATTERN = re.compile(r'\b(?<!\d)\d:\d\d(?!\d)\b')
 
     # Acceptable weight patterns
     WEIGHT_PATTERN = re.compile(r'\d+½? cwt|\d+-\d+-\d+')
@@ -48,7 +50,9 @@ class TowerConstants():
     POSTCODE_PATTERN = re.compile(r'\w\w\d+ \d\w\w')
 
     # Match 'check' if not followed by a Bank Holiday reference, 'by arrangement' and 'by invitation'
-    CHECK_PATTERN = re.compile(r'check(?! if Bank Holiday)|by arrangement|by invitation', re.IGNORECASE)
+    CHECK_PATTERN = re.compile(r'\b(check(?! if Bank Holiday)|by arrangement|by invitation)\b', re.IGNORECASE)
+
+    WEEKDAY_PATTERN = re.compile(r'\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)s?\b', re.IGNORECASE)
 
     # Valid phrases for week patterns
     WEEK_PHRASE_PATTERN = re.compile(r'1st|2nd|3rd|4th|5th')
@@ -80,6 +84,7 @@ class Tower(models.Model):
         SUNDAY = 'Sun'
 
     class PracticeWeeks(models.TextChoices):
+        NOT = 'Not', 'Not'
         W1 = '1st', '1st'
         W2 = '2nd', '2nd'
         W3 = '3rd', '3rd'
@@ -115,18 +120,26 @@ class Tower(models.Model):
             raise ValidationError("Time value missing leading '0'")
 
     def initial_capital_validator(value):
-        if (value[0].isupper() and not 
+        if (value[0].isupper() and not
             value.startswith(('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'))):
             raise ValidationError("No initial capital, except for days of week")
 
     def week_validator(value):
-        if ((Tower.PracticeWeeks.W1 in value or
-             Tower.PracticeWeeks.W2 in value or
-             Tower.PracticeWeeks.W3 in value or
-             Tower.PracticeWeeks.W4 in value or
-             Tower.PracticeWeeks.W5 in value
+        if (Tower.PracticeWeeks.NOT in value and
+            Tower.PracticeWeeks.W1  not in value and
+            Tower.PracticeWeeks.W2  not in value and
+            Tower.PracticeWeeks.W3  not in value and
+            Tower.PracticeWeeks.W4  not in value and
+            Tower.PracticeWeeks.W5  not in value):
+            raise ValidationError(f"Must have at least one week with 'Not'")
+        if ((Tower.PracticeWeeks.NOT in value or
+             Tower.PracticeWeeks.W1  in value or
+             Tower.PracticeWeeks.W2  in value or
+             Tower.PracticeWeeks.W3  in value or
+             Tower.PracticeWeeks.W4  in value or
+             Tower.PracticeWeeks.W5  in value
            ) and Tower.PracticeWeeks.ALT in value):
-            raise ValidationError(f"Can't include both 'Alternate' and individual week numbers")
+            raise ValidationError(f"Can't have both week numbers and 'Alternate'")
 
     def weight_validator(value):
         if not TowerConstants.WEIGHT_PATTERN.fullmatch(value):
@@ -156,12 +169,12 @@ class Tower(models.Model):
     service = models.CharField(max_length=200, blank=True, validators=[time_validator, initial_capital_validator], help_text="Short description of normal service ringing. No initial capital (unless day of week)")
     practice = models.CharField(max_length=200, blank=True, validators=[time_validator, initial_capital_validator], help_text="Short description of normal practice ringing. No initial capital (unless day of week)")
     practice_day = models.CharField(max_length=9, blank=True, choices=Days, help_text="Day of the week of main practice")
-    practice_weeks = MultiSelectField(max_length=50, blank=True, choices=PracticeWeeks, validators=[week_validator], help_text="Week(s) of the month for main practice if not all [‘2nd, 5th’, 'alt']")
+    practice_weeks = MultiSelectField(max_length=50, blank=True, choices=PracticeWeeks, validators=[week_validator], help_text="Week(s) of the month for main practice if not all")
     travel_check = models.BooleanField(default=False, help_text="Check before travelling to practices?")
     bells = models.PositiveIntegerField(null=True, blank=True, help_text="Number of ringable bells",validators=[bell_validator])
     ring_type = models.CharField(max_length=20, blank=True, choices=RingTypes)
     weight =models.CharField(max_length=50, blank=True, validators=[weight_validator], help_text="Use ‘15-3-13’ or ‘6cwt’")
-    note = models.CharField(max_length=10, blank=True, validators=[note_validator], help_text="Use ‘b’ and ‘#’")
+    note = models.CharField(max_length=10, blank=True, validators=[note_validator], help_text="Use A-G optionally followed by '#' or ‘b’")
     gf = models.BooleanField(blank=True, null=True, verbose_name="Ground Floor?")
     os_grid= models.CharField(max_length=8, blank=True, validators=[grid_validator], verbose_name='OS Grid')
     postcode = models.CharField(max_length=10, blank=True, validators=[postcode_validator])
@@ -182,40 +195,52 @@ class Tower(models.Model):
     def __str__(self):
         return f'{self.place}  {self.dedication}'
 
+    @property
+    def dove_link(self):
+        return f"https://dove.cccbr.org.uk/tower/{self.dove_towerid}"
+
+    @property
+    def bellboard_link(self):
+        return f"https://bb.ringingworld.co.uk/search?dove_tower={self.dove_towerid}"
+
+    @property
+    def felstead_link(self):
+        return f"https://felstead.cccbr.org.uk/tbid.php?tid={self.towerbase_id}"
+
+
     def clean(self):
 
         """
         Make various cross-field checks. Many of these are a bit heuristic.
         """
 
-        errors = []
+        errors = defaultdict(list)
 
         # ringing & saervice/practice
         if self.ringing_status == Tower.RingingStatus.NONE and (self.service or self.practice):
-            errors.append(f"Riging Status '{self.get_ringing_status_display()}' inconsistent with Service or Practice")
+            errors['ringing_status'].append(f"Iinconsistent with Service or Practice")
 
-        # day
-        if (self.practice and not self.practice_day) or (self.get_practice_day_display() not in self.practice):
-            errors.append(f"Practice Day '{self.practice_day}' inconsistent with Practice '{self.practice}'")
+        # practice_day & practice
+        if ((self.get_practice_day_display().lower() not in self.practice.lower()) or
+           (TowerConstants.WEEKDAY_PATTERN.search(self.practice) and not self.practice_day)):
+            errors['practice_day'].append(f"Inconsistent with Practice")
 
-        # Practice
+        # ravel_check & practice
         if TowerConstants.CHECK_PATTERN.search(self.practice) and not self.travel_check:
-            errors.append(f"Practice '{self.practice}' mentions 'check' but Travel Check not set")
+            errors['travel_check'].append(f"Practice mentions 'check'")
+        elif self.travel_check and not TowerConstants.CHECK_PATTERN.search(self.practice):
+            errors['travel_check'].append(f"Practice doesn't mention 'check'")
 
-        # Week
+        # practice_weeks & practice
         if not TowerConstants.CHECK_PATTERN.search(self.practice):
             for phrase in TowerConstants.WEEK_PHRASE_PATTERN.findall(self.practice):
                 if phrase not in self.practice_weeks:
-                    errors.append(f"'{phrase}' appears in in Practice '{self.practice}' but not in Practice Weeks")
-
+                    errors['practice_weeks'].append(f"'{phrase}' appears in in Practice")
 
         for phrase in self.practice_weeks:
-            if phrase not in self.practice:
-                errors.append(f"'{phrase}' in Practice Weeks but not in Practice '{self.practice}'")
+            if phrase.lower() not in self.practice.lower():
+                errors['practice_weeks'].append(f"'{phrase}' doesn't appear in Practice")
 
-        # Check
-        if self.travel_check and not TowerConstants.CHECK_PATTERN.search(self.practice):
-           errors.append(f"Travel Check set but Practice '{self.practice}' doesn't mention 'check'")
 
         if errors:
             raise ValidationError(errors)
