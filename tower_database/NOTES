@@ -1,0 +1,12 @@
+Dove:
+
+wget -O dove.csv "https://dove.cccbr.org.uk/towers.csv"
+
+
+$  /usr/local/opt/sqlite/bin/sqlite3 database
+sqlite> .mode csv
+sqlite> drop table if exists DoveTowers
+sqlite> .import dove.csv dove
+sqlite> .mode box
+
+
