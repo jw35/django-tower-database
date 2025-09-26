@@ -136,7 +136,7 @@ class DoveTowerAdmin(SearchAutoCompleteAdmin):
     search_fields = ["place", "dedicn", "towerid", "ringid"]
     search_help_text = "Search by place or dedication (or tower or ring  ID)"
     list_display = ["__str__", "bells"]
-    list_filter = ["bells", "ringtype", ("ur", admin.EmptyFieldListFilter)]
+    list_filter = ["bells", "ringtype", ("ur", admin.EmptyFieldListFilter), "county", "country", "diocese"]
 
     def get_readonly_fields(self, request, obj=None):
         return [f.name for f in obj._meta.fields]
