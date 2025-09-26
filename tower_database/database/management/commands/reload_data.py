@@ -45,8 +45,13 @@ lookup_fields = (
 )
 
 
+
+
 class Command(BaseCommand):
     help = 'Reload the database from the master list'
+
+    def add_arguments(self, parser):
+        parser.add_argument("--file", help="Import from CSV, rather than collecting directly")
 
 
     def handle(self, *args, **options):
@@ -55,13 +60,17 @@ class Command(BaseCommand):
         Tower.objects.all().delete()
         Contact.objects.all().delete()
 
-        # Get the CSV data from the master list
-        spreadsheet = '1o1pAHht9B3VapS9FziLOrMQlSTMvxQ_JeoGSjfEA9hU'
-        sheet = 'Ely DA towers'
-        url = f"https://docs.google.com/spreadsheets/d/{spreadsheet}/gviz/tq"
-        payload = {'tqx': 'out:csv', 'sheet': sheet}
-        r = requests.get(url, payload)
-        tower_csv = StringIO(r.text)
+        if options['file']:
+            # REad from the supplied file
+            tower_csv = open(options['file'], newline='')
+        else:
+            # Get the CSV data from the master list
+            spreadsheet = '1o1pAHht9B3VapS9FziLOrMQlSTMvxQ_JeoGSjfEA9hU'
+            sheet = 'Ely DA towers'
+            url = f"https://docs.google.com/spreadsheets/d/{spreadsheet}/gviz/tq"
+            payload = {'tqx': 'out:csv', 'sheet': sheet}
+            r = requests.get(url, payload)
+            tower_csv = StringIO(r.text)
 
         for csv_row in csv.DictReader(tower_csv):
 
@@ -79,9 +88,7 @@ class Command(BaseCommand):
                 if csv_row[f]:
                     setattr(db_row, t, l[csv_row[f]])
 
-            self.stdout.write(csv_row['Week'])
             weeks = re.split(r', +', csv_row['Week'])
-            self.stdout.write(repr(weeks))
             db_row.practice_weeks = weeks
 
             db_row.bells = int(csv_row['Bells'])
