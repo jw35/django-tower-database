@@ -193,7 +193,7 @@ class Tower(models.Model):
     history = HistoricalRecords()
 
     def __str__(self):
-        return f'{self.place}  {self.dedication}'
+        return f'{self.place}  ({self.dedication})'
 
     @property
     def dove_link(self):
@@ -349,7 +349,7 @@ class DoveTower(models.Model):
     snlong = models.CharField(db_column='SNLong', blank=True, null=True)  # Field name made lowercase.
 
     def __str__(self):
-        return f'{self.place}  {self.dedicn}'
+        return f'{self.place}  ({self.dedicn})'
 
 
     class Meta:

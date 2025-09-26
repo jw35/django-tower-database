@@ -49,7 +49,7 @@ class ContactAdmin(SearchAutoCompleteAdmin, SimpleHistoryAdmin):
 
 class TowerAdmin(SearchAutoCompleteAdmin, SimpleHistoryAdmin):
     inlines = [WebsiteInline, ContactInline]
-    list_display = ["place", "dedication", "district", "bells"]
+    list_display = ["__str__", "district", "bells"]
     list_filter = ["district", "report", "bells", "ringing_status", "ring_type", "practice_day"]
     search_fields = ["place", "dedication", "full_dedication", "nickname"]
     search_help_text = "Search by place or dedication"
@@ -135,6 +135,7 @@ class TowerAdmin(SearchAutoCompleteAdmin, SimpleHistoryAdmin):
 class DoveTowerAdmin(SearchAutoCompleteAdmin):
     search_fields = ["place", "dedicn"]
     search_help_text = "Search by place or dedication"
+    list_display = ["__str__", "bells"]
 
     def get_readonly_fields(self, request, obj=None):
         return [f.name for f in obj._meta.fields]
