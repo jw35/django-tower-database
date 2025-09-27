@@ -41,10 +41,12 @@ lookup_fields = (
     ('District', 'district', {'Cambridge': 'C', 'Ely': 'E', 'Huntingdon': 'H', 'Wisbech': 'W'}),
     ('Status', 'ringing_status', {'Regular ringing': 'R', 'Occasional ringing': 'O', 'No ringing': 'N'}),
     ('Day', 'practice_day', {'Monday': 'Mon', 'Tuesday': 'Tue', 'Wednesday': 'Wed', 'Thursday': 'Thu', 'Friday': 'Fri', 'Saturday': 'Sat', 'Sunday': 'Sun'}),
-    ('Type', 'ring_type', {'Chime': 'Chime', 'Tubular Chime': 'T-chime', 'Removed': '', 'Hung dead': ''}),
-)
-
-
+    ('Type', 'ring_type', {'Full-circle ring': 'Full', 'Lightweight ring': 'Light',
+                           'Carillon': 'Carillon', 'Tubular chime': 'T-chime',
+                           'Hemispherical chime': 'H-chinme', 'Chime': 'Chime',
+                           'Display bells': 'Display', 'Future ring': 'Future',
+                           'Other bells': 'Other'}
+    ))
 
 
 class Command(BaseCommand):
